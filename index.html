@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>Lettre pour Li-Na ❤️</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&amp;display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link crossorigin="" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js" type="text/javascript"></script>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro"', '"SF Pro Text"', '"SF Pro Display"', '"Segoe UI"', 'Roboto', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+          animation: {
+            'float-slow': 'float 12s ease-in-out infinite',
+            'float-delayed': 'float 18s ease-in-out infinite 2s',
+            'pulse-soft': 'pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+              '33%': { transform: 'translate(8px, -15px) scale(1.03)' },
+              '66%': { transform: 'translate(-10px, 8px) scale(0.97)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="style.css" rel="stylesheet"/>
+</link></head>
+<body class="text-slate-100 relative min-h-screen flex flex-col justify-between p-4 pb-20 xs:p-6" oncontextmenu="return false;">
+<div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+<div class="absolute top-[-150px] left-[-150px] w-[500px] h-[500px] bg-purple-600/25 rounded-full blur-[100px] animate-pulse-soft"></div>
+<div class="absolute bottom-[-150px] right-[-150px] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[110px] animate-float-slow"></div>
+<div class="absolute top-[35%] left-[-100px] w-[350px] h-[350px] bg-fuchsia-500/10 rounded-full blur-[90px] animate-float-delayed"></div>
+</div>
+<main class="flex-grow w-full max-w-sm mx-auto flex flex-col justify-start items-center z-10 relative">
+<div class="w-full flex flex-col justify-between min-h-[80vh] py-6 transition-all duration-500" id="locked-state">
+<div class="w-full flex items-center justify-between py-2">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
+<span class="text-[10px] tracking-[0.2em] uppercase font-bold text-white/40">Verrouillé</span>
+</div>
+<div class="p-1.5 rounded-full bg-white/5 border border-white/10">
+<i class="w-3.5 h-3.5 text-white/60" data-lucide="lock"></i>
+</div>
+</div>
+<div class="w-full p-8 my-auto rounded-[32px] bg-gradient-to-b from-white/5 to-white/0 border border-white/10 backdrop-blur-2xl flex flex-col items-center text-center shadow-2xl relative overflow-hidden" id="login-card">
+<div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-purple-500/30 to-transparent"></div>
+<div class="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center border border-purple-500/30 mb-5 shadow-lg shadow-purple-500/5">
+<i class="w-7 h-7 text-purple-300" data-lucide="fingerprint"></i>
+</div>
+<h2 class="text-xl font-semibold tracking-tight text-white mb-2">Lettre pour Li-Na ❤️</h2>
+<p class="text-xs text-white/50 mb-7 leading-relaxed px-2">Mais quel est donc le code ?</p>
+<div class="w-full space-y-3">
+<div class="relative">
+<input class="w-full glass-input px-4 py-3.5 rounded-2xl text-center text-base text-white placeholder-white/20 tracking-[0.25em] focus:outline-none" id="password-input" oninput="autoCheckPassword(this.value)" placeholder="Code secret..." type="password"/>
+</div>
+<button class="w-full py-3.5 px-4 rounded-2xl text-xs font-semibold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 active:scale-[0.98] transition-all duration-300 shadow-[0_4px_25px_rgba(168,85,247,0.25)] flex items-center justify-center gap-2" onclick="checkPassword()">
+<span>Déverrouiller</span>
+<i class="w-4 h-4" data-lucide="chevron-right"></i>
+</button>
+</div>
+</div>
+<div class="h-6"></div>
+</div>
+<div class="hidden w-full flex-col justify-start opacity-0 scale-95 transition-all duration-500 pt-10" id="menu-state">
+<div class="w-full flex items-center justify-between mb-8">
+<h2 class="text-2xl font-bold bg-gradient-to-r from-white to-purple-300 bg-clip-text text-transparent">Bienvenue mon bébé !!</h2>
+</div>
+<div class="space-y-4 w-full">
+
+  <div id="daily-note-card" class="w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group transition-all duration-300" aria-live="polite">
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center justify-between gap-3 mb-2">
+        <h3 class="text-lg font-semibold text-white group-hover:text-amber-300 transition-colors">Mot du jour</h3>
+        <span id="daily-note-time" class="text-[10px] tracking-wider uppercase text-white/35 whitespace-nowrap">—</span>
+      </div>
+      <p id="daily-note-text" class="text-xs text-white/50">Chargement du mot...</p>
+    </div>
+    <div class="flex-shrink-0 p-4 bg-amber-500/15 rounded-full transition-colors">
+      <i data-lucide="message-circle-heart" class="text-amber-300 w-6 h-6"></i>
+    </div>
+  </div>
+
+  <button onclick="navigate('map')" class="w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group hover:bg-white/10 transition-all duration-300 active:scale-[0.98]">
+    <div class="flex-1">
+      <h3 class="text-lg font-semibold text-white mb-1 group-hover:text-purple-300 transition-colors">Notre Carte</h3>
+      <p class="text-xs text-white/50">Tous les évènements qui nous ont marqué sur une carte hihihi</p>
+    </div>
+    <div class="flex-shrink-0 p-4 bg-purple-500/20 rounded-full group-hover:bg-purple-500/40 transition-colors">
+      <i data-lucide="map" class="text-purple-300 w-6 h-6"></i>
+    </div>
+  </button>
+
+  <button onclick="navigate('letter')" class="w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group hover:bg-white/10 transition-all duration-300 active:scale-[0.98]">
+    <div class="flex-1">
+      <h3 class="text-lg font-semibold text-white mb-1 group-hover:text-fuchsia-300 transition-colors">La Lettre</h3>
+      <p class="text-xs text-white/50">Tout ce que je ressens pour toi ❤️</p>
+    </div>
+    <div class="flex-shrink-0 p-4 bg-fuchsia-500/20 rounded-full group-hover:bg-fuchsia-500/40 transition-colors">
+      <i data-lucide="heart" class="text-fuchsia-300 w-6 h-6"></i>
+    </div>
+  </button>
+
+</div>
+</div>
+<div class="hidden w-full flex-col justify-start opacity-0 scale-95 transition-all duration-500 h-[85vh]" id="map-state">
+<div class="w-full flex items-center justify-between py-4 mb-2">
+<button class="flex items-center gap-2 text-white/60 hover:text-white transition-colors" onclick="navigate('menu')">
+<i class="w-4 h-4" data-lucide="arrow-left"></i>
+<span class="text-xs font-semibold uppercase tracking-wider">Retour</span>
+</button>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-1.5 bg-white/5 hover:bg-white/15 px-2.5 py-1.5 rounded-full transition-colors text-white/70 border border-white/10 backdrop-blur-md" onclick="toggleMapStyle()">
+<i class="w-3.5 h-3.5" data-lucide="layers"></i>
+<span class="text-[9px] font-semibold uppercase tracking-wider" id="map-style-text">Satellite</span>
+</button>
+<span class="text-[10px] tracking-[0.2em] uppercase font-bold text-purple-400">Notre Carte</span>
+</div>
+</div>
+<div class="w-full flex-grow rounded-[32px] overflow-hidden border border-purple-500/20 relative shadow-[0_0_40px_rgba(168,85,247,0.15)] bg-[#030107]">
+<div class="w-full h-full z-0" id="leaflet-map"></div>
+</div>
+</div>
+<div aria-modal="true" class="hidden opacity-0" id="place-detail-state" onclick="handlePlaceDetailBackdrop(event)" role="dialog">
+<div class="liquid-glass-glow w-full rounded-[36px] p-7 flex flex-col text-left" onclick="event.stopPropagation()">
+<div class="flex justify-between items-center text-[10px] tracking-widest text-white/40 mb-4 uppercase font-medium">
+<span id="detail-date">Date du souvenir</span>
+</div>
+<h3 class="text-2xl font-semibold bg-gradient-to-r from-white via-white to-purple-200 bg-clip-text text-transparent mb-6 leading-tight" id="detail-title">
+          Titre du lieu
+        </h3>
+<div class="space-y-4 text-[13px] leading-relaxed text-purple-100/85" id="detail-content">
+</div>
+</div>
+</div>
+<div class="hidden w-full flex-col justify-start opacity-0 scale-95 transition-all duration-500" id="letter-state">
+<div class="w-full flex items-center justify-between py-4 mb-2">
+<button class="flex items-center gap-2 text-white/60 hover:text-white transition-colors" onclick="navigate('menu')">
+<i class="w-4 h-4" data-lucide="arrow-left"></i>
+<span class="text-xs font-semibold uppercase tracking-wider">Retour</span>
+</button>
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+<span class="text-[10px] tracking-[0.2em] uppercase font-bold text-emerald-400">Déverrouillé</span>
+</div>
+</div>
+<div class="liquid-glass-glow w-full rounded-t-[36px] p-7 pt-9 flex flex-col text-left relative" id="letter-private-content">
+<p class="text-center text-sm text-white/50 py-12">Chargement de la lettre...</p>
+</div>
+</div>
+<!-- espace admin -->
+<div class="hidden w-full flex-col justify-start opacity-0 scale-95 transition-all duration-500 pt-10" id="admin-state">
+<div class="w-full flex items-center justify-between mb-8">
+<h2 class="text-2xl font-bold">Espace admin</h2>
+</div>
+<div class="glass-panel rounded-3xl p-6 mb-6 admin-panel">
+<p class="admin-panel-title">Mot du jour</p>
+<textarea class="admin-input admin-textarea" id="admin-daily-note" maxlength="1200" placeholder="Écris ton mot du jour..."></textarea>
+<button class="admin-primary-btn" id="btn-save-daily-note" onclick="saveDailyNote()">
+<i class="w-4 h-4" data-lucide="save"></i>
+<span>Publier le mot</span>
+</button>
+<p class="admin-status hidden" id="daily-note-status"></p>
+</div>
+<div class="glass-panel rounded-3xl p-6 mb-6 admin-panel">
+<p class="admin-panel-title">Ajouter un lieu sur la carte</p>
+<div class="admin-grid-2">
+<label class="admin-field">
+<span>Latitude</span>
+<input class="admin-input" id="admin-place-lat" placeholder="43.946538" step="any" type="number"/>
+</label>
+<label class="admin-field">
+<span>Longitude</span>
+<input class="admin-input" id="admin-place-lng" placeholder="4.800285" step="any" type="number"/>
+</label>
+</div>
+<label class="admin-field">
+<span>Titre du lieu</span>
+<input class="admin-input" id="admin-place-title" placeholder="Ex. Notre restaurant" type="text"/>
+</label>
+<div class="admin-events-head">
+<span>Événement(s)</span>
+<button class="admin-secondary-btn" onclick="addAdminEvent()" type="button">
+<i class="w-4 h-4" data-lucide="plus"></i>
+      Ajouter un événement
+    </button>
+</div>
+<div class="admin-events-list" id="admin-events-list"></div>
+<button class="admin-primary-btn" id="btn-save-place" onclick="savePlace()">
+<i class="w-4 h-4" data-lucide="map-pin-plus"></i>
+<span>Ajouter le lieu</span>
+</button>
+<p class="admin-status hidden" id="place-status"></p>
+</div>
+<div class="glass-panel rounded-3xl p-6 mb-6 admin-panel">
+<p class="admin-panel-title">Notification Li-Na</p>
+<p class=".admin-tip">Envoyer un mail pour prévenir qu'une mise à jour vient d'être publiée. <br></br></p>
+<button class="admin-primary-btn" id="btn-send-email" onclick="sendUpdateEmail()">
+<i class="w-4 h-4" data-lucide="send"></i>
+<span>Prévenir Li-Na</span>
+</button>
+<p class="admin-status hidden" id="email-status">Envoi en cours...</p>
+</div>
+<div class="admin-footer-actions">
+<button class="admin-link-btn" onclick="navigate('menu')">Voir le site</button>
+<button class="admin-link-btn" onclick="lockSite()">Verrouiller le site</button>
+</div>
+</div>
+</main>
+<div class="bottom-infinite-fade"></div>
+<div class="fixed inset-0 bg-[#030107]/90 z-50 flex items-center justify-center p-4 opacity-0 invisible transition-all duration-300" id="lightbox" onclick="closeLightbox()">
+<div class="relative max-w-full max-h-full flex items-center justify-center">
+<img alt="Agrandissement" class="max-w-[95vw] max-h-[85vh] rounded-2xl border border-purple-500/20 shadow-2xl object-contain" id="lightbox-img" src=""/>
+</div>
+</div>
+<script crossorigin="" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="script.js"></script>
+</body>
+</html>
