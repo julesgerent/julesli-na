@@ -66,7 +66,16 @@
 <p class="text-xs text-white/50 mb-7 leading-relaxed px-2">Mais quel est donc le code ?</p>
 <div class="w-full space-y-3">
 <div class="relative">
-<input class="w-full glass-input px-4 py-3.5 rounded-2xl text-center text-base text-white placeholder-white/20 tracking-[0.25em] focus:outline-none" id="password-input" oninput="autoCheckPassword(this.value)" placeholder="Code secret..." type="password"/>
+<form onsubmit="event.preventDefault(); checkPassword();">
+  <input 
+    id="password-input" 
+    type="password" 
+    enterkeyhint="go" 
+    placeholder="Code secret..." 
+    class="w-full glass-input px-4 py-3.5 rounded-2xl text-center text-base text-white placeholder-white/20 tracking-[0.25em] focus:outline-none"
+  />
+  <p id="loading-text" class="text-xs text-white/60 mt-2 text-center hidden">Chargement...</p>
+</form>
 </div>
 <button class="w-full py-3.5 px-4 rounded-2xl text-xs font-semibold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 active:scale-[0.98] transition-all duration-300 shadow-[0_4px_25px_rgba(168,85,247,0.25)] flex items-center justify-center gap-2" onclick="checkPassword()">
 <span>Déverrouiller</span>
@@ -153,10 +162,6 @@
 <i class="w-4 h-4" data-lucide="arrow-left"></i>
 <span class="text-xs font-semibold uppercase tracking-wider">Retour</span>
 </button>
-<div class="flex items-center gap-2">
-<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-<span class="text-[10px] tracking-[0.2em] uppercase font-bold text-emerald-400">Déverrouillé</span>
-</div>
 </div>
 <div class="liquid-glass-glow w-full rounded-t-[36px] p-7 pt-9 flex flex-col text-left relative" id="letter-private-content">
 <p class="text-center text-sm text-white/50 py-12">Chargement de la lettre...</p>

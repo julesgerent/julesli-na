@@ -135,21 +135,15 @@ const states = ['locked', 'menu', 'map', 'letter', 'admin'];
 
     // logique de déverouillage
 
-    let loginTimer = null;
-
-    function autoCheckPassword(val) {
-      clearTimeout(loginTimer);
-      if (!val || val.length < 6) return;
-      loginTimer = setTimeout(() => checkPassword(), 280);
-    }
-
     async function checkPassword() {
       const input = document.getElementById('password-input');
       const btn = document.querySelector('#login-card button');
+      const loadingText = document.getElementById('loading-text');
       if (!input || input.dataset.loading === "1") return;
 
       input.dataset.loading = "1";
       if (btn) btn.disabled = true;
+      if (loadingText) loadingText.classList.remove('hidden');
 
       try {
         const role = await loginWithCode(input.value);
@@ -168,6 +162,7 @@ const states = ['locked', 'menu', 'map', 'letter', 'admin'];
       } finally {
         input.dataset.loading = "0";
         if (btn) btn.disabled = false;
+        if (loadingText) loadingText.classList.add('hidden');
       }
     }
 
