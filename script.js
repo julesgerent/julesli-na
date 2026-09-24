@@ -148,6 +148,7 @@ const states = ['locked', 'menu', 'map', 'letter', 'admin'];
       try {
         const role = await loginWithCode(input.value);
         navigate(role === "admin" ? "admin" : "menu");
+        enableNotifications();
         if (role === "admin") {
           resetAdminPlaceForm();
           const daily = document.getElementById("daily-note-text");
@@ -673,4 +674,26 @@ const states = ['locked', 'menu', 'map', 'letter', 'admin'];
         }
       });
     });
+
+async function enableNotifications() {
+  if (typeof firebase.messaging === "undefined") return;
+  const messaging = firebase.messaging();
   
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      const token = await messaging.getToken({ 
+        vapidKey: "COLLE_TA_CLE_VAPID_ICI" // <-- Remplace ce texte par la clé copiée à l'étape 4
+      });
+      
+      if (token && currentRole) {
+        await db.collection("settings").doc(`pushToken_${currentRole}`).set({
+          token: token,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
+    }
+  } catch (error) {
+    console.error("Erreur avec les notifications :", error);
+  }
+}
