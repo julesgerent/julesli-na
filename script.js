@@ -683,7 +683,7 @@ async function enableNotifications() {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
       const token = await messaging.getToken({ 
-        vapidKey: "COLLE_TA_CLE_VAPID_ICI" // <-- Remplace ce texte par la clé copiée à l'étape 4
+        vapidKey: "BIphsCrM9BS1XQno8CYHEUjtTSnBJ2z9yGh5984d7nTJ6_3Do63y9UXprFTI-DoxI5OzTrtCz4N9mbnWMlMbAV8" 
       });
       
       if (token && currentRole) {
