@@ -15,3 +15,7 @@ window.APP_CONFIG = {
 if (typeof firebase !== 'undefined' && !firebase.apps.length) {
   firebase.initializeApp(window.APP_CONFIG.firebase);
 }
+
+if (typeof firebase !== 'undefined' && firebase.analytics) {
+  firebase.analytics();
+}
