@@ -1,3 +1,28 @@
+self.addEventListener("notificationclick", function(event) {
+  event.notification.close();
+
+  const targetUrl = "https://julesgerent.github.io/julesli-na/";
+
+  event.waitUntil(
+    clients.matchAll({
+      type: "window",
+      includeUncontrolled: true
+    }).then(function(clientList) {
+
+      for (const client of clientList) {
+        if (client.url.startsWith(targetUrl) && "focus" in client) {
+          return client.focus();
+        }
+      }
+
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+
+
 importScripts(
   "https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"
 );
@@ -5,6 +30,7 @@ importScripts(
 importScripts(
   "https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"
 );
+
 
 firebase.initializeApp({
   apiKey: "AIzaSyD5Nlp9CAlPMnF7cMqTIhEJxsk4FKLafKE",
@@ -18,10 +44,8 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
-
   console.log(
     "[firebase-messaging-sw.js] Message reçu :",
     payload
   );
-
 });
