@@ -676,24 +676,96 @@ const states = ['locked', 'menu', 'map', 'letter', 'admin'];
     });
 
 async function enableNotifications() {
-  if (typeof firebase.messaging === "undefined") return;
-  const messaging = firebase.messaging();
-  
+  if (!("serviceWorker" in navigator)) {
+    console.error("Service Workers non supportés.");
+    return;
+  }
+
+  if (!("Notification" in window)) {
+    console.error("Notifications non supportées.");
+    return;
+  }
+
   try {
+
     const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      const token = await messaging.getToken({ 
-        vapidKey: "BIphsCrM9BS1XQno8CYHEUjtTSnBJ2z9yGh5984d7nTJ6_3Do63y9UXprFTI-DoxI5OzTrtCz4N9mbnWMlMbAV8" 
-      });
-      
-      if (token && currentRole) {
-        await db.collection("settings").doc(`pushToken_${currentRole}`).set({
-          token: token,
+
+    console.log("Permission notifications :", permission);
+
+    if (permission !== "granted") {
+      console.warn("Notifications non autorisées.");
+      return;
+    }
+
+    const swRegistration = await navigator.serviceWorker.register(
+      "./firebase-messaging-sw.js",
+      {
+        scope: "./"
+      }
+    );
+
+    console.log("Service Worker enregistré :", swRegistration);
+
+    const registration = await navigator.serviceWorker.ready;
+
+    const messaging = firebase.messaging();
+
+    const token = await messaging.getToken({
+      vapidKey: "BIphsCrM9BS1XQno8CYHEUjtTSnBJ2z9yGh5984d7nTJ6_3Do63y9UXprFTI-DoxI5OzTrtCz4N9mbnWMlMbAV8",
+      serviceWorkerRegistration: registration
+    });
+
+    if (!token) {
+      console.error("Aucun token FCM généré.");
+      return;
+    }
+
+    console.log("TOKEN FCM :", token);
+
+    if (currentRole) {
+      await db.collection("settings")
+        .doc(`pushToken_${currentRole}`)
+        .set({
+          token,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
-      }
     }
+
+    console.log("Notifications Firebase correctement configurées.");
+
   } catch (error) {
-    console.error("Erreur avec les notifications :", error);
+
+    console.error(
+      "Erreur configuration notifications Firebase :",
+      error
+    );
+
   }
+}
+
+
+if (typeof firebase !== "undefined" && firebase.messaging) {
+
+  const messaging = firebase.messaging();
+
+  messaging.onMessage(async (payload) => {
+
+    console.log("Notification reçue au premier plan :", payload);
+
+    if (Notification.permission === "granted") {
+
+      const registration = await navigator.serviceWorker.ready;
+
+      await registration.showNotification(
+        payload.notification?.title || "Jules & Li-Na",
+        {
+          body: payload.notification?.body || "",
+          icon: "./assets/icon-192.jpeg"
+        }
+      );
+
+    }
+
+  });
+
 }
