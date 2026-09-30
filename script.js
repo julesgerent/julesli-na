@@ -100,6 +100,11 @@ let calendarTrackerDetailsOpen = false;
 const CALENDAR_TRACKER_CACHE_MS = 5 * 60 * 1000;
 const TRACKER_TYPES = ["type-1", "type-2", "type-3", "type-4"];
 
+let trackerInkAnimationFrame = null;
+let trackerInkParticles = [];
+let trackerInkIsRevealing = false;
+let trackerInkResizeTimer = null;
+
 function resetCalendarTracker() {
   if (calendarTrackerInterval) {
     clearInterval(calendarTrackerInterval);
@@ -121,6 +126,9 @@ function resetCalendarTracker() {
   if (typeEl) typeEl.textContent = "-";
   if (meaningEl) meaningEl.textContent = "Texte";
   if (statsEl) statsEl.innerHTML = "";
+  stopTrackerInvisibleInk();
+  resetTrackerSecretVisual();
+
   updateTrackerDetailsVisibility();
 }
 
@@ -181,6 +189,16 @@ function toggleTrackerDetails() {
   updateTrackerDetailsVisibility();
 }
 
+function escapeTrackerHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  }[char]));
+}
+
 function renderTrackerTypeStats(types) {
   const statsEl = document.getElementById("calendar-tracker-type-stats");
   if (!statsEl) return;
@@ -190,15 +208,184 @@ function renderTrackerTypeStats(types) {
     const item = byType.get(type) || {};
     const count = Number.isFinite(Number(item.count)) ? Number(item.count) : 0;
     const dateText = formatTrackerDate(item.lastEventAtMs, false);
+    const displayName = escapeTrackerHtml(item.meaning || type || "—");
+
+
     return `
       <div class="tracker-type-row">
         <div>
-          <span class="tracker-type-name">${type}</span>
+          <span class="tracker-type-name">${displayName}</span>
           <span class="tracker-type-date">Dernière fois : ${dateText}</span>
         </div>
         <span class="tracker-type-count">${count} au total</span>
       </div>`;
   }).join("");
+}
+
+function lowercaseFirstLetter(value) {
+  const text = String(value || "").trim();
+  if (!text) return text;
+  return text.charAt(0).toLocaleLowerCase("fr-FR") + text.slice(1);
+}
+
+function stopTrackerInvisibleInk() {
+  if (trackerInkAnimationFrame) {
+    cancelAnimationFrame(trackerInkAnimationFrame);
+    trackerInkAnimationFrame = null;
+  }
+  trackerInkParticles = [];
+  trackerInkIsRevealing = false;
+}
+
+function setupTrackerInvisibleInk() {
+  const wrapper = document.getElementById("calendar-tracker-secret");
+  const canvas = document.getElementById("tracker-invisible-ink");
+  if (!wrapper || !canvas) return;
+
+  stopTrackerInvisibleInk();
+  wrapper.classList.remove("revealed");
+  canvas.style.opacity = "1";
+
+  const rect = wrapper.getBoundingClientRect();
+  if (rect.width < 2 || rect.height < 2) return;
+
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  canvas.style.width = `${rect.width}px`;
+  canvas.style.height = `${rect.height}px`;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const width = rect.width;
+  const height = rect.height;
+  const area = width * height;
+  const particleCount = Math.max(460, Math.min(1150, Math.round(area / 6.2)));
+
+  trackerInkParticles = Array.from({ length: particleCount }, () => {
+    const sizeRoll = Math.random();
+    const radius = sizeRoll < 0.78
+      ? 0.45 + Math.random() * 0.45
+      : sizeRoll < 0.97
+        ? 0.9 + Math.random() * 0.55
+        : 1.45 + Math.random() * 0.55;
+
+    return {
+      x: Math.random() * width,
+      y: Math.random() * height,
+      radius,
+      baseAlpha: 0.28 + Math.random() * 0.5,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.55 + Math.random() * 1.4,
+      driftX: (Math.random() - 0.5) * 0.72,
+      driftY: (Math.random() - 0.5) * 0.58,
+      revealVX: 0,
+      revealVY: 0,
+      revealAlpha: 1
+    };
+  });
+
+  let lastTime = performance.now();
+
+  function draw(time) {
+    const dt = Math.min((time - lastTime) / 1000, 0.04);
+    lastTime = time;
+    ctx.clearRect(0, 0, width, height);
+
+    let alive = false;
+
+    for (const p of trackerInkParticles) {
+      if (trackerInkIsRevealing) {
+        p.x += p.revealVX * dt;
+        p.y += p.revealVY * dt;
+        p.revealVX *= 0.955;
+        p.revealVY *= 0.955;
+        p.revealAlpha -= dt * 2.9;
+        if (p.revealAlpha <= 0) continue;
+      }
+
+      alive = true;
+
+      const shimmer = Math.sin(time * 0.0021 * p.speed + p.phase);
+      const shimmer2 = Math.sin(time * 0.0047 + p.phase * 1.63);
+      const px = p.x + Math.sin(time * 0.00125 * p.speed + p.phase) * p.driftX;
+      const py = p.y + Math.cos(time * 0.00108 * p.speed + p.phase) * p.driftY;
+
+      let alpha = p.baseAlpha + shimmer * 0.09 + shimmer2 * 0.035;
+      alpha = Math.max(0.12, Math.min(0.88, alpha));
+      if (trackerInkIsRevealing) alpha *= Math.max(0, p.revealAlpha);
+
+      const sparkle = shimmer > 0.93 && p.radius > 0.8;
+      const tone = sparkle ? 250 : 214 + Math.floor((shimmer2 + 1) * 8);
+
+      ctx.beginPath();
+      ctx.arc(px, py, sparkle ? p.radius * 1.18 : p.radius, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${tone},${tone},${Math.min(255, tone + 3)},${alpha})`;
+      ctx.fill();
+    }
+
+    if (trackerInkIsRevealing && !alive) {
+      canvas.style.opacity = "0";
+      wrapper.classList.add("revealed");
+      trackerInkAnimationFrame = null;
+      return;
+    }
+
+    trackerInkAnimationFrame = requestAnimationFrame(draw);
+  }
+
+  if (!canvas.dataset.trackerInkBound) {
+    canvas.dataset.trackerInkBound = "1";
+    canvas.addEventListener("click", revealTrackerSecret);
+  }
+
+  if (!wrapper.dataset.trackerInkKeyboardBound) {
+    wrapper.dataset.trackerInkKeyboardBound = "1";
+    wrapper.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        revealTrackerSecret();
+      }
+    });
+  }
+
+  trackerInkAnimationFrame = requestAnimationFrame(draw);
+}
+
+function revealTrackerSecret(event) {
+  const wrapper = document.getElementById("calendar-tracker-secret");
+  const canvas = document.getElementById("tracker-invisible-ink");
+  if (!wrapper || !canvas || trackerInkIsRevealing || wrapper.classList.contains("revealed")) return;
+
+  trackerInkIsRevealing = true;
+  const rect = canvas.getBoundingClientRect();
+  const clickX = typeof event?.clientX === "number" ? event.clientX - rect.left : rect.width / 2;
+  const clickY = typeof event?.clientY === "number" ? event.clientY - rect.top : rect.height / 2;
+
+  trackerInkParticles.forEach(p => {
+    let dx = p.x - clickX;
+    let dy = p.y - clickY;
+    const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+    dx /= distance;
+    dy /= distance;
+
+    const proximity = Math.max(0, 1 - distance / Math.max(rect.width, rect.height));
+    const force = 10 + proximity * 24 + Math.random() * 8;
+    p.revealVX = dx * force + (Math.random() - 0.5) * 4;
+    p.revealVY = dy * force + (Math.random() - 0.5) * 4;
+    p.revealAlpha = 0.88 + Math.random() * 0.12;
+  });
+
+  setTimeout(() => wrapper.classList.add("revealed"), 75);
+}
+
+function resetTrackerSecretVisual() {
+  const wrapper = document.getElementById("calendar-tracker-secret");
+  const canvas = document.getElementById("tracker-invisible-ink");
+  if (wrapper) wrapper.classList.remove("revealed");
+  if (canvas) canvas.style.opacity = "1";
 }
 
 function renderCalendarTrackerData(data) {
@@ -232,8 +419,13 @@ function renderCalendarTrackerData(data) {
   startCalendarTrackerClock(lastEventMs);
 
   if (detailEl) detailEl.textContent = `La dernière fois c'était le ${formatTrackerDate(lastEventMs, true)}.`;
-  if (typeEl) typeEl.textContent = data.latest.type || "—";
-  if (meaningEl) meaningEl.textContent = data.latest.meaning || "Texte à compléter";
+  if (typeEl) {
+    const latestMeaning = data.latest.meaning || data.latest.type || "—";
+    typeEl.textContent = lowercaseFirstLetter(latestMeaning);
+  }
+
+  resetTrackerSecretVisual();
+  requestAnimationFrame(() => setupTrackerInvisibleInk());
 }
 
 async function loadCalendarTracker(force = false) {
@@ -281,6 +473,16 @@ async function loadCalendarTracker(force = false) {
     lucide.createIcons();
   }
 }
+
+window.addEventListener("resize", () => {
+  clearTimeout(trackerInkResizeTimer);
+  trackerInkResizeTimer = setTimeout(() => {
+    const wrapper = document.getElementById("calendar-tracker-secret");
+    if (wrapper && !wrapper.classList.contains("revealed") && calendarTrackerData?.found) {
+      setupTrackerInvisibleInk();
+    }
+  }, 140);
+});
 
 function getTrackerMeaningsFromAdmin() {
   const meanings = {};
