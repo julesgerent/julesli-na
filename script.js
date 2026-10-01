@@ -1657,36 +1657,32 @@ const states = ['locked', 'menu', 'tracker', 'map', 'letter', 'admin'];
 async function enableNotifications() {
   if (!("serviceWorker" in navigator)) {
     console.error("Service Workers non supportés.");
-    return;
+    return false;
   }
 
   if (!("Notification" in window)) {
     console.error("Notifications non supportées.");
-    return;
+    return false;
   }
 
   try {
-
-    const permission = await Notification.requestPermission();
+    const permission = Notification.permission === "default"
+      ? await Notification.requestPermission()
+      : Notification.permission;
 
     console.log("Permission notifications :", permission);
 
     if (permission !== "granted") {
       console.warn("Notifications non autorisées.");
-      return;
+      return false;
     }
 
-    const swRegistration = await navigator.serviceWorker.register(
+    await navigator.serviceWorker.register(
       "./firebase-messaging-sw.js",
-      {
-        scope: "./"
-      }
+      { scope: "./" }
     );
 
-    console.log("Service Worker enregistré :", swRegistration);
-
     const registration = await navigator.serviceWorker.ready;
-
     const messaging = firebase.messaging();
 
     const token = await messaging.getToken({
@@ -1696,10 +1692,8 @@ async function enableNotifications() {
 
     if (!token) {
       console.error("Aucun token FCM généré.");
-      return;
+      return false;
     }
-
-    console.log("TOKEN FCM :", token);
 
     if (currentRole === "user") {
       const deviceStorageKey = "juleslina_push_device_id";
@@ -1719,7 +1713,7 @@ async function enableNotifications() {
         .set({
           token,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+        });
 
     } else if (currentRole === "admin") {
       await db.collection("settings")
@@ -1731,14 +1725,14 @@ async function enableNotifications() {
     }
 
     console.log("Notifications Firebase correctement configurées.");
+    return true;
 
   } catch (error) {
-
     console.error(
       "Erreur configuration notifications Firebase :",
       error
     );
-
+    return false;
   }
 }
 
@@ -1793,7 +1787,14 @@ async function sendPushNotification() {
     const result = await sendPush({ title, body });
 
     if (result.data?.success) {
-      setAdminStatus("push-status", "Notification push envoyée !", "success");
+      const sentCount = Number(result.data?.sentCount || 0);
+      const failedCount = Number(result.data?.failedCount || 0);
+
+      const statusMessage = sentCount > 0
+        ? `Notification envoyée à ${sentCount} appareil${sentCount > 1 ? "s" : ""}${failedCount > 0 ? ` (${failedCount} échec${failedCount > 1 ? "s" : ""})` : ""}.`
+        : "Notification push envoyée !";
+
+      setAdminStatus("push-status", statusMessage, "success");
       titleInput.value = "";
       messageInput.value = "";
     } else {
