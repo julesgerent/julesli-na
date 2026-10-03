@@ -110,15 +110,15 @@
   <button onclick="navigate('tracker')" class="w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group hover:bg-white/10 transition-all duration-300 active:scale-[0.98] tracker-menu-card">
     <div class="flex-1">
       <h3 class="text-lg font-semibold text-white mb-1 group-hover:text-rose-300 transition-colors">Notre Tracker</h3>
-      <p class="text-xs text-white/50">Depuis combien de temps déjà ?</p>
+      <p class="text-xs text-white/50">Pleins de stats sur nous (on est en SES ou quoi)</p>
     </div>
     <div class="flex-shrink-0 p-4 bg-rose-500/15 rounded-full group-hover:bg-rose-500/30 transition-colors">
       <i data-lucide="timer-reset" class="text-rose-300 w-6 h-6"></i>
     </div>
   </button>
 
-  <button onclick="navigate('map')" class="w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group hover:bg-white/10 transition-all duration-300 active:scale-[0.98]">
-    <div class="flex-1">
+  <button onclick="navigate('map')" class="w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group hover:bg-white/10 transition-all duration-300 active:scale-[0.98] map-menu-card">
+    <div class="flex-1 min-w-0">
       <h3 class="text-lg font-semibold text-white mb-1 group-hover:text-purple-300 transition-colors">Notre Carte</h3>
       <p class="text-xs text-white/50">Tous les évènements qui nous ont marqué sur une carte hihihi</p>
     </div>
@@ -190,7 +190,41 @@
     </button>
   </div>
 
-  <p class="tracker-privacy-note">Le calendrier n'est consulté que lorsque cette page est ouverte ou actualisée.</p>
+  <div class="tracker-paper-card tracker-stats-card" aria-live="polite">
+    <div class="tracker-tape tracker-tape-alt"></div>
+    <div class="tracker-icon-wrap tracker-stats-icon-wrap">
+      <i data-lucide="chart-no-axes-column-increasing" class="w-6 h-6"></i>
+    </div>
+
+    <p class="tracker-eyebrow">Nos souvenirs</p>
+
+    <div class="tracker-map-stats-grid" aria-label="Statistiques de notre carte">
+      <div class="tracker-map-stat">
+        <span id="tracker-stat-places" class="tracker-map-stat-value">—</span>
+        <span id="tracker-stat-places-label" class="tracker-map-stat-label">lieux visités</span>
+      </div>
+      <div class="tracker-map-stat">
+        <span id="tracker-stat-events" class="tracker-map-stat-value">—</span>
+        <span id="tracker-stat-events-label" class="tracker-map-stat-label">souvenirs</span>
+      </div>
+    </div>
+
+    <div class="tracker-top-place-card">
+      <span class="tracker-top-place-label">Le lieu où on a le plus de souvenirs</span>
+      <strong id="tracker-top-place-name" class="tracker-top-place-name">Chargement…</strong>
+      <span id="tracker-top-place-count" class="tracker-top-place-count">—</span>
+    </div>
+
+    <button id="tracker-places-more" type="button" class="tracker-more-btn" onclick="toggleTrackerPlacesDetails()" aria-expanded="false" aria-controls="tracker-places-ranking-panel">
+      <span id="tracker-places-more-label">Voir plus</span>
+      <i id="tracker-places-more-icon" data-lucide="chevron-down" class="w-4 h-4"></i>
+    </button>
+
+    <div id="tracker-places-ranking-panel" class="tracker-more-panel hidden">
+      <p class="tracker-more-title">Classement des lieux</p>
+      <div id="tracker-places-ranking" class="tracker-places-ranking"></div>
+    </div>
+  </div>
 </div>
 
 <div class="hidden w-full flex-col justify-start opacity-0 scale-95 transition-all duration-500 h-[85vh]" id="map-state">

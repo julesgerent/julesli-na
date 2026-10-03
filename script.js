@@ -69,8 +69,110 @@ async function hydratePrivateData() {
   }
 
   placesData = placesSnap.docs.map(doc => doc.data());
+  renderTrackerMapStats();
   calculateDays();
   lucide.createIcons();
+}
+
+let trackerPlacesDetailsOpen = false;
+
+function getTrackerPlacesRanking() {
+  return (Array.isArray(placesData) ? placesData : [])
+    .map((place, index) => ({
+      id: place?.id ?? index,
+      title: String(place?.title || `Lieu ${place?.id ?? index + 1}`).trim(),
+      count: Array.isArray(place?.events) ? place.events.length : 0
+    }))
+    .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title, "fr", { sensitivity: "base" }));
+}
+
+function updateTrackerPlacesDetailsVisibility() {
+  const panel = document.getElementById("tracker-places-ranking-panel");
+  const button = document.getElementById("tracker-places-more");
+  const label = document.getElementById("tracker-places-more-label");
+  const icon = document.getElementById("tracker-places-more-icon");
+
+  if (panel) panel.classList.toggle("hidden", !trackerPlacesDetailsOpen);
+  if (button) button.setAttribute("aria-expanded", trackerPlacesDetailsOpen ? "true" : "false");
+  if (label) label.textContent = trackerPlacesDetailsOpen ? "Voir moins" : "Voir plus";
+  if (icon) icon.setAttribute("data-lucide", trackerPlacesDetailsOpen ? "chevron-up" : "chevron-down");
+  if (window.lucide) lucide.createIcons();
+}
+
+function toggleTrackerPlacesDetails() {
+  trackerPlacesDetailsOpen = !trackerPlacesDetailsOpen;
+  updateTrackerPlacesDetailsVisibility();
+}
+
+function renderTrackerPlacesRanking(ranking) {
+  const listEl = document.getElementById("tracker-places-ranking");
+  if (!listEl) return;
+
+  if (!ranking.length) {
+    listEl.innerHTML = '<p class="tracker-ranking-empty">Aucun lieu enregistré pour le moment.</p>';
+    return;
+  }
+
+  listEl.innerHTML = ranking.map((item, index) => {
+    const safeTitle = escapeTrackerHtml(item.title);
+    const eventLabel = item.count === 1 ? "souvenir" : "souvenirs";
+    return `
+      <div class="tracker-place-rank-row">
+        <span class="tracker-place-rank-position">${index + 1}</span>
+        <span class="tracker-place-rank-name">${safeTitle}</span>
+        <span class="tracker-place-rank-count">${item.count} ${eventLabel}</span>
+      </div>`;
+  }).join("");
+}
+
+function renderTrackerMapStats() {
+  const ranking = getTrackerPlacesRanking();
+  const placesCount = ranking.length;
+  const eventsCount = ranking.reduce((total, place) => total + place.count, 0);
+
+  const placesEl = document.getElementById("tracker-stat-places");
+  const eventsEl = document.getElementById("tracker-stat-events");
+  const placesLabelEl = document.getElementById("tracker-stat-places-label");
+  const eventsLabelEl = document.getElementById("tracker-stat-events-label");
+  const topNameEl = document.getElementById("tracker-top-place-name");
+  const topCountEl = document.getElementById("tracker-top-place-count");
+
+  if (placesEl) placesEl.textContent = String(placesCount);
+  if (eventsEl) eventsEl.textContent = String(eventsCount);
+  if (placesLabelEl) placesLabelEl.textContent = placesCount === 1 ? "lieu visité" : "lieux visités";
+  if (eventsLabelEl) eventsLabelEl.textContent = eventsCount === 1 ? "souvenir" : "souvenirs";
+
+  if (!ranking.length) {
+    if (topNameEl) topNameEl.textContent = "Aucun lieu pour le moment";
+    if (topCountEl) topCountEl.textContent = "—";
+  } else {
+    const maxCount = ranking[0].count;
+    const leaders = ranking.filter(item => item.count === maxCount);
+    if (topNameEl) {
+      topNameEl.textContent = leaders.length === 1
+        ? leaders[0].title
+        : `Ex æquo : ${leaders.map(item => item.title).join(" · ")}`;
+    }
+    if (topCountEl) topCountEl.textContent = `${maxCount} ${maxCount === 1 ? "souvenir" : "souvenirs"}`;
+  }
+
+  renderTrackerPlacesRanking(ranking);
+  updateTrackerPlacesDetailsVisibility();
+}
+
+function resetTrackerMapStats() {
+  trackerPlacesDetailsOpen = false;
+  const placesEl = document.getElementById("tracker-stat-places");
+  const eventsEl = document.getElementById("tracker-stat-events");
+  const topNameEl = document.getElementById("tracker-top-place-name");
+  const topCountEl = document.getElementById("tracker-top-place-count");
+  const rankingEl = document.getElementById("tracker-places-ranking");
+  if (placesEl) placesEl.textContent = "—";
+  if (eventsEl) eventsEl.textContent = "—";
+  if (topNameEl) topNameEl.textContent = "Chargement…";
+  if (topCountEl) topCountEl.textContent = "—";
+  if (rankingEl) rankingEl.innerHTML = "";
+  updateTrackerPlacesDetailsVisibility();
 }
 
 function renderDailyNote(data) {
@@ -567,6 +669,7 @@ async function lockSite() {
   } finally {
     currentRole = null;
     placesData = [];
+    resetTrackerMapStats();
     resetCalendarTracker();
     const input = document.getElementById("password-input");
     if (input) input.value = "";
