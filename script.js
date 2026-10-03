@@ -1,4 +1,3 @@
-
 lucide.createIcons();
 
 const FIREBASE_SDK_READY = typeof firebase !== "undefined";
@@ -69,9 +68,129 @@ async function hydratePrivateData() {
   }
 
   placesData = placesSnap.docs.map(doc => doc.data());
+  renderOnThisDayMemories();
   renderTrackerMapStats();
   calculateDays();
   lucide.createIcons();
+}
+
+function escapeMemoryHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function getOnThisDayMemories(now = new Date()) {
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const currentDay = now.getDate();
+  const memories = [];
+
+  (Array.isArray(placesData) ? placesData : []).forEach((place) => {
+    const events = Array.isArray(place?.events) ? place.events : [];
+
+    events.forEach((event, eventIndex) => {
+      const iso = String(event?.dateISO || "").trim();
+      const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!match) return;
+
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      const yearsAgo = currentYear - year;
+
+      if (yearsAgo < 1 || month !== currentMonth || day !== currentDay) return;
+
+      memories.push({
+        placeId: place?.id,
+        placeTitle: String(place?.title || "").trim(),
+        eventIndex,
+        eventTitle: String(event?.title || "Souvenir").trim() || "Souvenir",
+        displayDate: String(event?.date || iso).trim(),
+        dateISO: iso,
+        yearsAgo
+      });
+    });
+  });
+
+  return memories.sort((a, b) =>
+    a.yearsAgo - b.yearsAgo ||
+    a.eventTitle.localeCompare(b.eventTitle, "fr", { sensitivity: "base" })
+  );
+}
+
+function bindMenuPinnedShake(card) {
+  if (!card || card.dataset.pinnedShakeBound === "1") return;
+  card.dataset.pinnedShakeBound = "1";
+
+  card.addEventListener("mouseenter", () => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (card.classList.contains("menu-pinned-shake")) return;
+    card.classList.add("menu-pinned-shake");
+  });
+
+  card.addEventListener("animationend", (event) => {
+    if (event.animationName === "menuPinnedShake") {
+      card.classList.remove("menu-pinned-shake");
+    }
+  });
+}
+
+function renderOnThisDayMemories() {
+  const container = document.getElementById("on-this-day-container");
+  if (!container) return;
+
+  const memories = getOnThisDayMemories();
+
+  if (!memories.length) {
+    container.innerHTML = "";
+    container.classList.add("hidden");
+    return;
+  }
+
+  container.innerHTML = memories.map((memory, index) => {
+    const yearsLabel = memory.yearsAgo === 1 ? "1 an" : `${memory.yearsAgo} ans`;
+    const safeTitle = escapeMemoryHtml(memory.eventTitle);
+    const safePlace = escapeMemoryHtml(memory.placeTitle);
+    const safeDate = escapeMemoryHtml(memory.displayDate);
+    const placeId = JSON.stringify(memory.placeId);
+
+    return `
+      <button
+        type="button"
+        class="on-this-day-card group"
+        style="--memory-card-index:${index}"
+        onclick='openPlaceDetail(${placeId}, ${memory.eventIndex})'
+        aria-label="Voir le souvenir ${safeTitle}"
+      >
+        <div class="on-this-day-copy">
+          <div class="on-this-day-heading-row">
+            <h3>Il y a ${yearsLabel} aujourd'hui…</h3>
+            <span class="on-this-day-date">${safeDate}</span>
+          </div>
+          <p class="on-this-day-title">${safeTitle}</p>
+          ${safePlace ? `<p class="on-this-day-place">${safePlace}</p>` : ""}
+          <span class="on-this-day-link">Voir le souvenir <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></span>
+        </div>
+        <div class="on-this-day-icon">
+          <i data-lucide="history" class="w-6 h-6"></i>
+        </div>
+      </button>`;
+  }).join("");
+
+  container.classList.remove("hidden");
+  container.querySelectorAll(".on-this-day-card").forEach(bindMenuPinnedShake);
+  if (window.lucide) lucide.createIcons();
+}
+
+function resetOnThisDayMemories() {
+  const container = document.getElementById("on-this-day-container");
+  if (!container) return;
+  container.innerHTML = "";
+  container.classList.add("hidden");
 }
 
 let trackerPlacesDetailsOpen = false;
@@ -669,6 +788,7 @@ async function lockSite() {
   } finally {
     currentRole = null;
     placesData = [];
+    resetOnThisDayMemories();
     resetTrackerMapStats();
     resetCalendarTracker();
     const input = document.getElementById("password-input");
@@ -834,7 +954,7 @@ const states = ['locked', 'menu', 'tracker', 'map', 'letter', 'admin'];
     }
 
     
-      function openPlaceDetail(id) {
+      function openPlaceDetail(id, targetEventIndex = null) {
       const place = placesData.find(p => p.id === id);
       if (!place) return;
 
@@ -895,7 +1015,7 @@ const states = ['locked', 'menu', 'tracker', 'map', 'letter', 'admin'];
 
         place.events.forEach((event, index) => {
           contentHTML += `
-            <div class="${index > 0 ? 'mt-10 pt-8 border-t border-purple-500/20' : ''}">
+            <div id="place-event-${place.id}-${index}" class="place-event-memory ${index > 0 ? 'mt-10 pt-8 border-t border-purple-500/20' : ''}">
               <div class="text-[10px] tracking-widest text-white/40 mb-2 uppercase font-medium">${event.date}</div>
               <h4 class="text-lg font-semibold text-white mb-3">${event.title}</h4>
               <p class="mb-4">${event.text}</p>
@@ -959,6 +1079,19 @@ const states = ['locked', 'menu', 'tracker', 'map', 'letter', 'admin'];
       requestAnimationFrame(() => {
         detailView.style.opacity = '1';
       });
+
+      if (targetEventIndex !== null && Number.isInteger(Number(targetEventIndex)) && place.events.length > 1) {
+        const targetIndex = Number(targetEventIndex);
+        setTimeout(() => {
+          const target = document.getElementById(`place-event-${place.id}-${targetIndex}`);
+          if (!target) return;
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.classList.remove('memory-target-flash');
+          void target.offsetWidth;
+          target.classList.add('memory-target-flash');
+          setTimeout(() => target.classList.remove('memory-target-flash'), 1800);
+        }, 220);
+      }
     }
 
     function handlePlaceDetailBackdrop(event) {
@@ -1201,6 +1334,63 @@ const states = ['locked', 'menu', 'tracker', 'map', 'letter', 'admin'];
         <div class="photo-upload-rows">${rows}</div>`;
     }
 
+    function convertFrenchDateToISO(dateText) {
+      if (!dateText || typeof dateText !== "string") return "";
+
+      const months = {
+        janvier: 1,
+        février: 2,
+        fevrier: 2,
+        mars: 3,
+        avril: 4,
+        mai: 5,
+        juin: 6,
+        juillet: 7,
+        août: 8,
+        aout: 8,
+        septembre: 9,
+        octobre: 10,
+        novembre: 11,
+        décembre: 12,
+        decembre: 12
+      };
+
+      const firstDate = dateText.trim().split(/\s+ou\s+/i)[0].trim();
+
+      const match = firstDate.match(/^(\d{1,2})(?:\s*-\s*\d{1,2})?\s+([A-Za-zÀ-ÿ]+)\s+(\d{4})$/);
+      if (!match) return "";
+
+      const day = Number(match[1]);
+      const month = months[match[2].toLowerCase()];
+      const year = Number(match[3]);
+      if (!month || !Number.isInteger(day) || !Number.isInteger(year)) return "";
+
+      const testDate = new Date(year, month - 1, day);
+      if (
+        testDate.getFullYear() !== year ||
+        testDate.getMonth() !== month - 1 ||
+        testDate.getDate() !== day
+      ) return "";
+
+      return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+
+    function isValidISODate(value) {
+      const match = String(value || "").trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!match) return false;
+
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      const testDate = new Date(year, month - 1, day);
+
+      return (
+        testDate.getFullYear() === year &&
+        testDate.getMonth() === month - 1 &&
+        testDate.getDate() === day
+      );
+    }
+
     function addAdminEvent(initial = {}, context = {}) {
       const list = document.getElementById("admin-events-list");
       if (!list) return;
@@ -1238,6 +1428,9 @@ const states = ['locked', 'menu', 'tracker', 'map', 'letter', 'admin'];
           <label class="admin-field"><span>Date</span>
             <input type="text" class="admin-input event-date" placeholder="Ex. 23 Septembre 2026" ${editable ? "" : "disabled"}>
           </label>
+          <label class="admin-field"><span>Date ISO</span>
+            <input type="text" class="admin-input event-date-iso" placeholder="AAAA-MM-JJ" inputmode="numeric" ${editable ? "" : "disabled"}>
+          </label>
           <label class="admin-field"><span>Titre</span>
             <input type="text" class="admin-input event-title" placeholder="Titre du souvenir" ${editable ? "" : "disabled"}>
           </label>
@@ -1253,13 +1446,64 @@ const states = ['locked', 'menu', 'tracker', 'map', 'letter', 'admin'];
       const header = block.querySelector(".admin-event-header");
       const headerTitle = block.querySelector(".admin-event-title");
       const dateInput = block.querySelector(".event-date");
+      const dateISOInput = block.querySelector(".event-date-iso");
+      const dateISOStatus = block.querySelector(".event-date-iso-status");
       const titleInput = block.querySelector(".event-title");
       const textInput = block.querySelector(".event-text");
 
       headerTitle.textContent = initial.title || `Nouveau souvenir ${index}`;
       dateInput.value = initial.date || "";
+      dateISOInput.value = initial.dateISO || (initial.date ? convertFrenchDateToISO(initial.date) : "");
       titleInput.value = initial.title || "";
       textInput.value = initial.text || "";
+
+      let dateISOEditedManually = false;
+
+      function updateDateISOStatus(message, tone = "default") {
+        if (!dateISOStatus) return;
+        dateISOStatus.textContent = message;
+        dateISOStatus.style.color = tone === "error"
+          ? "rgba(248,113,113,.9)"
+          : tone === "success"
+            ? "rgba(74,222,128,.78)"
+            : "rgba(255,255,255,.35)";
+      }
+
+      if (dateISOInput.value) {
+        updateDateISOStatus(
+          initial.dateISO
+            ? "Date ISO enregistrée. Elle reste modifiable tant que le souvenir est éditable."
+            : "Date ISO générée automatiquement. Tu peux la corriger si nécessaire.",
+          isValidISODate(dateISOInput.value) ? "success" : "error"
+        );
+      }
+
+      if (editable) {
+        dateInput.addEventListener("input", () => {
+          if (dateISOEditedManually) return;
+          const generated = convertFrenchDateToISO(dateInput.value);
+          dateISOInput.value = generated;
+          if (generated) {
+            updateDateISOStatus(`Générée automatiquement : ${generated}`, "success");
+          } else if (dateInput.value.trim()) {
+            updateDateISOStatus("Conversion impossible : vérifier la date ou saisir la date ISO manuellement.", "error");
+          } else {
+            updateDateISOStatus("Générée automatiquement");
+          }
+        });
+
+        dateISOInput.addEventListener("input", () => {
+          dateISOEditedManually = true;
+          const value = dateISOInput.value.trim();
+          if (!value) {
+            updateDateISOStatus("Champ vide : saisir AAAA-MM-JJ", "error");
+          } else if (isValidISODate(value)) {
+            updateDateISOStatus("Date ISO modifiée manuellement.", "success");
+          } else {
+            updateDateISOStatus("Format invalide. Utiliser AAAA-MM-JJ", "error");
+          }
+        });
+      }
 
       header.addEventListener("click", event => {
         if (event.target.closest("button")) return;
@@ -1464,11 +1708,20 @@ const states = ['locked', 'menu', 'tracker', 'map', 'letter', 'admin'];
         if (!adminEventHasAnyContent(block)) continue;
 
         const date = block.querySelector(".event-date")?.value.trim() || "";
+        const dateISO = block.querySelector(".event-date-iso")?.value.trim() || "";
         const title = block.querySelector(".event-title")?.value.trim() || "";
         const text = block.querySelector(".event-text")?.value.trim() || "";
 
         if (!date || !title || !text) {
           throw new Error("Chaque souvenir doit avoir une date, un titre et un texte.");
+        }
+
+        if (!dateISO) {
+          throw new Error(`Le souvenir « ${title} » n'a pas de date ISO. Vérifie le champ Date ISO.`);
+        }
+
+        if (!isValidISODate(dateISO)) {
+          throw new Error(`La date ISO « ${dateISO} » du souvenir « ${title} » est invalide. Format attendu : AAAA-MM-JJ.`);
         }
 
         const eventId = initial.id || createAdminEventId();
@@ -1478,6 +1731,7 @@ const states = ['locked', 'menu', 'tracker', 'map', 'letter', 'admin'];
           ...initial,
           id: eventId,
           date,
+          dateISO,
           title,
           text,
           photos: uploaded.photos,
@@ -1743,19 +1997,7 @@ const states = ['locked', 'menu', 'tracker', 'map', 'letter', 'admin'];
         };
     }
 
-    document.querySelectorAll('#menu-state > div:nth-child(2) > button, #daily-note-card').forEach((card) => {
-      card.addEventListener('mouseenter', () => {
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        if (card.classList.contains('menu-pinned-shake')) return;
-        card.classList.add('menu-pinned-shake');
-      });
-
-      card.addEventListener('animationend', (event) => {
-        if (event.animationName === 'menuPinnedShake') {
-          card.classList.remove('menu-pinned-shake');
-        }
-      });
-    });
+    document.querySelectorAll('#menu-state > div:nth-child(2) > button, #daily-note-card').forEach(bindMenuPinnedShake);
 
 async function enableNotifications() {
   if (!("serviceWorker" in navigator)) {

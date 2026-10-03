@@ -1784,3 +1784,180 @@
     font-size: .95rem;
   }
 }
+
+#on-this-day-container {
+  display: grid;
+  gap: 20px;
+}
+
+#on-this-day-container.hidden {
+  display: none !important;
+}
+
+.on-this-day-card {
+  position: relative !important;
+  width: 100% !important;
+  padding: 22px 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 24px !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  border-radius: 6px !important;
+  background: var(--paper-dark) !important;
+  box-shadow: 6px 10px 20px rgba(0,0,0,.5) !important;
+  color: var(--text-light) !important;
+  overflow: visible !important;
+  text-align: left !important;
+  --menu-card-rest-angle: calc(-.45deg + (var(--memory-card-index, 0) * .35deg));
+  transform: rotate(var(--menu-card-rest-angle));
+  transform-origin: 50% -10px !important;
+  will-change: transform;
+  cursor: pointer !important;
+}
+
+.on-this-day-card::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 64px;
+  height: 20px;
+  transform: translateX(-50%) rotate(-1.5deg);
+  background: var(--tape-color);
+  border-left: 2px dashed rgba(255,255,255,.12);
+  border-right: 2px dashed rgba(255,255,255,.12);
+  box-shadow: 0 2px 5px rgba(0,0,0,.35);
+  pointer-events: none;
+}
+
+.on-this-day-card.menu-pinned-shake {
+  animation: menuPinnedShake 1.35s cubic-bezier(.34,.08,.28,1) both;
+  border-color: rgba(255,255,255,.2) !important;
+}
+
+.on-this-day-card:hover {
+  border-color: rgba(255,255,255,.2) !important;
+}
+
+.on-this-day-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.on-this-day-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
+}
+
+.on-this-day-card h3 {
+  margin: 0;
+  font-family: 'Playfair Display', serif !important;
+  font-size: 1.26rem !important;
+  line-height: 1.2 !important;
+  color: #fff !important;
+  transition: color .3s ease;
+}
+
+.on-this-day-card:hover h3 {
+  color: #f9a8d4 !important;
+}
+
+.on-this-day-date {
+  flex-shrink: 0;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-size: .58rem !important;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.32) !important;
+}
+
+.on-this-day-title {
+  margin: 0;
+  font-family: 'Caveat', cursive !important;
+  font-size: 1.12rem !important;
+  line-height: 1.3 !important;
+  color: #c8c2ce !important;
+  overflow-wrap: anywhere;
+}
+
+.on-this-day-place {
+  margin: 3px 0 0;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-size: .66rem !important;
+  color: rgba(255,255,255,.34) !important;
+}
+
+.on-this-day-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-size: .68rem !important;
+  font-weight: 800;
+  color: rgba(249,168,212,.82) !important;
+}
+
+.on-this-day-icon {
+  flex-shrink: 0;
+  width: 48px !important;
+  height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid rgba(244,114,182,.16) !important;
+  border-radius: 50% !important;
+  background: rgba(244,114,182,.07) !important;
+  color: #f9a8d4 !important;
+  transition: background-color .3s ease, border-color .3s ease;
+}
+
+.on-this-day-card:hover .on-this-day-icon {
+  background: rgba(244,114,182,.14) !important;
+  border-color: rgba(244,114,182,.26) !important;
+}
+
+.place-event-memory {
+  scroll-margin-block: 90px;
+  border-radius: 16px;
+  transition: background-color .35s ease, box-shadow .35s ease;
+}
+
+@keyframes memoryTargetFlash {
+  0%, 100% { background: transparent; box-shadow: 0 0 0 rgba(244,114,182,0); }
+  25%, 72% { background: rgba(244,114,182,.075); box-shadow: 0 0 0 10px rgba(244,114,182,.045); }
+}
+
+.place-event-memory.memory-target-flash {
+  animation: memoryTargetFlash 1.7s ease both;
+}
+
+@media (max-width: 430px) {
+  .on-this-day-card {
+    gap: 16px !important;
+    padding: 21px 20px !important;
+  }
+
+  .on-this-day-heading-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .on-this-day-icon {
+    width: 44px !important;
+    height: 44px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .on-this-day-card.menu-pinned-shake,
+  .place-event-memory.memory-target-flash {
+    animation: none !important;
+  }
+}
