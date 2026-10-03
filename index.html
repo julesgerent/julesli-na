@@ -94,16 +94,54 @@
 </div>
 <div class="space-y-4 w-full">
 
-  <div id="daily-note-card" class="w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group transition-all duration-300" aria-live="polite">
+  <div id="daily-note-admin-card" class="daily-note-card daily-note-admin-card w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group transition-all duration-300" aria-live="polite">
     <div class="flex-1 min-w-0">
       <div class="flex items-center justify-between gap-3 mb-2">
-        <h3 class="text-lg font-semibold text-white group-hover:text-amber-300 transition-colors">Mot du jour</h3>
-        <span id="daily-note-time" class="text-[10px] tracking-wider uppercase text-white/35 whitespace-nowrap">—</span>
+        <h3 class="text-lg font-semibold text-white group-hover:text-amber-300 transition-colors">Mot de Jules</h3>
+        <span id="daily-note-admin-time" class="daily-note-time text-[10px] tracking-wider uppercase text-white/35 whitespace-nowrap">—</span>
       </div>
-      <p id="daily-note-text" class="text-xs text-white/50">Chargement du mot...</p>
+      <p id="daily-note-admin-text" class="text-xs text-white/50">Chargement du mot...</p>
     </div>
-    <div class="flex-shrink-0 p-4 bg-amber-500/15 rounded-full transition-colors">
+    <div class="daily-note-icon flex-shrink-0 p-4 bg-amber-500/15 rounded-full transition-colors">
       <i data-lucide="message-circle-heart" class="text-amber-300 w-6 h-6"></i>
+    </div>
+  </div>
+
+  <div id="daily-note-user-card" class="daily-note-card daily-note-user-card w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group transition-all duration-300" aria-live="polite">
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center justify-between gap-3 mb-2">
+        <h3 class="text-lg font-semibold text-white group-hover:text-pink-300 transition-colors">Mot de Li-Na</h3>
+        <span id="daily-note-user-time" class="daily-note-time text-[10px] tracking-wider uppercase text-white/35 whitespace-nowrap">—</span>
+      </div>
+      <p id="daily-note-user-text" class="text-xs text-white/50">Chargement du mot...</p>
+
+      <div id="user-daily-note-actions" class="hidden">
+        <button id="btn-toggle-user-daily-note" type="button" class="user-daily-note-toggle" onclick="toggleUserDailyNoteEditor()">
+          <i data-lucide="pencil-line" class="w-3.5 h-3.5"></i>
+          <span>Écrire mon mot</span>
+        </button>
+
+        <div id="user-daily-note-editor" class="hidden">
+          <textarea id="user-daily-note" class="admin-input admin-textarea user-daily-note-textarea" maxlength="1200" placeholder="Écris ton mot du jour..."></textarea>
+
+          <label class="user-daily-note-push-option">
+            <input id="user-daily-note-send-push" type="checkbox" />
+            <span class="user-daily-note-checkbox" aria-hidden="true">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            </span>
+            <span>M'envoyer une notification (à Jules)</span>
+          </label>
+
+          <button id="btn-save-user-daily-note" type="button" class="admin-primary-btn user-daily-note-save" onclick="saveUserDailyNote()">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            <span>Publier mon mot</span>
+          </button>
+          <p id="user-daily-note-status" class="admin-status hidden"></p>
+        </div>
+      </div>
+    </div>
+    <div class="daily-note-icon flex-shrink-0 p-4 bg-pink-500/15 rounded-full transition-colors">
+      <i data-lucide="message-circle-heart" class="text-pink-300 w-6 h-6"></i>
     </div>
   </div>
 
@@ -280,7 +318,7 @@
 <h2 class="text-2xl font-bold">Espace admin</h2>
 </div>
 <div class="glass-panel rounded-3xl p-6 mb-6 admin-panel">
-<p class="admin-panel-title">Mot du jour</p>
+<p class="admin-panel-title">Mot de Jules</p>
 <textarea class="admin-input admin-textarea" id="admin-daily-note" maxlength="1200" placeholder="Écris ton mot du jour..."></textarea>
 <button class="admin-primary-btn" id="btn-save-daily-note" onclick="saveDailyNote()">
 <i class="w-4 h-4" data-lucide="save"></i>
@@ -427,6 +465,6 @@ Ajouter un événement
 <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-storage-compat.js"></script>
 <script src="firebase-config.js?v=20261003-2"></script>
-<script src="script.js?v=20261003-2"></script>
+<script src="script.js?v=20261004-1"></script>
 </body>
 </html>

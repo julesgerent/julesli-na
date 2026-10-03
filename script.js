@@ -6,6 +6,7 @@ let db = null;
 let storage = null;
 let placesData = [];
 let currentRole = null;
+let currentFcmToken = null;
 
 if (!FIREBASE_SDK_READY) {
   console.error("Firebase SDK non chargé.");
@@ -294,21 +295,147 @@ function resetTrackerMapStats() {
   updateTrackerPlacesDetailsVisibility();
 }
 
-function renderDailyNote(data) {
-  const textEl = document.getElementById("daily-note-text");
-  const timeEl = document.getElementById("daily-note-time");
+function formatDailyNoteTime(value) {
+  if (!value?.toDate) return "—";
+  const d = value.toDate();
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit", month: "2-digit", year: "2-digit",
+    hour: "2-digit", minute: "2-digit"
+  }).format(d).replace(",", " -");
+}
+
+function renderDailyNotePart(note, textId, timeId) {
+  const textEl = document.getElementById(textId);
+  const timeEl = document.getElementById(timeId);
   if (!textEl || !timeEl) return;
 
-  textEl.textContent = data?.text || "Aucun mot publié pour le moment.";
+  textEl.textContent = note?.text || "Aucun mot publié pour le moment.";
+  timeEl.textContent = formatDailyNoteTime(note?.updatedAt);
+}
 
-  if (data?.updatedAt?.toDate) {
-    const d = data.updatedAt.toDate();
-    timeEl.textContent = new Intl.DateTimeFormat("fr-FR", {
-      day: "2-digit", month: "2-digit", year: "2-digit",
-      hour: "2-digit", minute: "2-digit"
-    }).format(d).replace(",", " -");
-  } else {
-    timeEl.textContent = "—";
+function renderDailyNote(data) {
+  const legacyAdminNote = (data?.text || data?.updatedAt)
+    ? { text: data?.text || "", updatedAt: data?.updatedAt || null }
+    : null;
+
+  const adminNote = data?.admin && typeof data.admin === "object"
+    ? data.admin
+    : legacyAdminNote;
+
+  const userNote = data?.user && typeof data.user === "object"
+    ? data.user
+    : null;
+
+  renderDailyNotePart(adminNote, "daily-note-admin-text", "daily-note-admin-time");
+  renderDailyNotePart(userNote, "daily-note-user-text", "daily-note-user-time");
+}
+
+function updateUserDailyNoteComposerVisibility() {
+  const actions = document.getElementById("user-daily-note-actions");
+  if (!actions) return;
+  actions.classList.toggle("hidden", currentRole !== "user");
+  if (currentRole !== "user") resetUserDailyNoteEditor();
+}
+
+function resetUserDailyNoteEditor() {
+  const editor = document.getElementById("user-daily-note-editor");
+  const field = document.getElementById("user-daily-note");
+  const checkbox = document.getElementById("user-daily-note-send-push");
+  const status = document.getElementById("user-daily-note-status");
+  const toggle = document.getElementById("btn-toggle-user-daily-note");
+
+  if (editor) editor.classList.add("hidden");
+  if (field) field.value = "";
+  if (checkbox) checkbox.checked = false;
+  if (status) {
+    status.textContent = "";
+    status.classList.add("hidden");
+    status.classList.remove("is-success", "is-error");
+  }
+  if (toggle) toggle.setAttribute("aria-expanded", "false");
+}
+
+function toggleUserDailyNoteEditor() {
+  if (currentRole !== "user") return;
+  const editor = document.getElementById("user-daily-note-editor");
+  const toggle = document.getElementById("btn-toggle-user-daily-note");
+  if (!editor) return;
+
+  const willOpen = editor.classList.contains("hidden");
+  editor.classList.toggle("hidden", !willOpen);
+  if (toggle) toggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+
+  if (willOpen) {
+    setTimeout(() => document.getElementById("user-daily-note")?.focus(), 80);
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function setUserDailyNoteStatus(message, type = "neutral") {
+  const el = document.getElementById("user-daily-note-status");
+  if (!el) return;
+  el.textContent = message;
+  el.classList.remove("hidden", "is-success", "is-error");
+  if (type === "success") el.classList.add("is-success");
+  if (type === "error") el.classList.add("is-error");
+}
+
+async function saveUserDailyNote() {
+  if (currentRole !== "user") return;
+
+  const field = document.getElementById("user-daily-note");
+  const checkbox = document.getElementById("user-daily-note-send-push");
+  const btn = document.getElementById("btn-save-user-daily-note");
+  const text = String(field?.value || "").trim();
+  const sendPush = checkbox?.checked === true;
+
+  if (!text) {
+    setUserDailyNoteStatus("Gros bébé ! tu peux pas publier un mot vide !", "error");
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  setUserDailyNoteStatus(sendPush ? "Publication du mot et envoi de la notification…" : "Publication du mot…");
+
+  try {
+    let senderToken = currentFcmToken;
+
+    if (sendPush && !senderToken) {
+      const notificationsReady = await enableNotifications();
+      if (notificationsReady) senderToken = currentFcmToken;
+    }
+
+
+    const functions = firebase.app().functions("europe-west9");
+    const saveNote = functions.httpsCallable("saveUserDailyNote");
+    const result = await saveNote({
+      text,
+      sendPush,
+      senderToken: sendPush ? (senderToken || null) : null
+    });
+
+
+    const snap = await db.collection("content").doc("daily-note").get();
+    if (snap.exists) renderDailyNote(snap.data());
+
+    if (field) field.value = "";
+    if (checkbox) checkbox.checked = false;
+
+    if (sendPush && result.data?.pushSent === false) {
+      setUserDailyNoteStatus("Mot publié, mais la notification n'a pas pu être envoyée.", "error");
+    } else if (sendPush) {
+      setUserDailyNoteStatus("Mot publié et notification envoyée ❤️", "success");
+    } else {
+      setUserDailyNoteStatus("Mot publié ❤️", "success");
+    }
+  } catch (error) {
+    console.error("Erreur publication mot utilisateur :", error);
+    let message = "Impossible de publier le mot.";
+    if (error?.code === "functions/unauthenticated") message = "Tu n'es plus connectée.";
+    if (error?.code === "functions/permission-denied") message = "Tu n'as pas l'autorisation de publier ce mot.";
+    setUserDailyNoteStatus(message, "error");
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -788,6 +915,7 @@ async function lockSite() {
   } finally {
     currentRole = null;
     placesData = [];
+    updateUserDailyNoteComposerVisibility();
     resetOnThisDayMemories();
     resetTrackerMapStats();
     resetCalendarTracker();
@@ -847,6 +975,7 @@ const states = ['locked', 'menu', 'tracker', 'map', 'letter', 'admin'];
       try {
         const role = await loginWithCode(input.value);
         navigate(role === "admin" ? "admin" : "menu");
+        updateUserDailyNoteComposerVisibility();
         enableNotifications();
         if (role === "admin") {
           populateAdminPlaces();
@@ -1137,8 +1266,10 @@ const states = ['locked', 'menu', 'tracker', 'map', 'letter', 'admin'];
       btn.disabled = true;
       try {
         await db.collection("content").doc("daily-note").set({
-          text,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          admin: {
+            text,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }
         }, { merge: true });
 
         const snap = await db.collection("content").doc("daily-note").get();
@@ -1997,7 +2128,7 @@ const states = ['locked', 'menu', 'tracker', 'map', 'letter', 'admin'];
         };
     }
 
-    document.querySelectorAll('#menu-state > div:nth-child(2) > button, #daily-note-card').forEach(bindMenuPinnedShake);
+    document.querySelectorAll('#menu-state > div:nth-child(2) > button, .daily-note-card').forEach(bindMenuPinnedShake);
 
 async function enableNotifications() {
   if (!("serviceWorker" in navigator)) {
@@ -2037,8 +2168,12 @@ async function enableNotifications() {
 
     if (!token) {
       console.error("Aucun token FCM généré.");
+      currentFcmToken = null;
+
       return false;
     }
+
+    currentFcmToken = token;
 
     if (currentRole === "user") {
       const deviceStorageKey = "juleslina_push_device_id";
