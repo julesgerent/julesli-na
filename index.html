@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html class="dark" lang="fr">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>Jules & Li-na</title>
+<link rel="icon" type="image/png" href="assets/icon-trans-192.png">
+<link rel="apple-touch-icon" href ="assets/icon-512-liquid-glass.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&amp;display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link crossorigin="" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js" type="text/javascript"></script>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro"', '"SF Pro Text"', '"SF Pro Display"', '"Segoe UI"', 'Roboto', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+          animation: {
+            'float-slow': 'float 12s ease-in-out infinite',
+            'float-delayed': 'float 18s ease-in-out infinite 2s',
+            'pulse-soft': 'pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+              '33%': { transform: 'translate(8px, -15px) scale(1.03)' },
+              '66%': { transform: 'translate(-10px, 8px) scale(0.97)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="style.css?v=20261117-2" rel="stylesheet"/>
+<link rel="manifest" href="manifest.json">
+</link></head>
+<body class="text-slate-100 relative min-h-screen flex flex-col justify-between p-4 pb-20 xs:p-6" oncontextmenu="return false;">
+<div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+<div class="absolute top-[-150px] left-[-150px] w-[500px] h-[500px] bg-purple-600/25 rounded-full blur-[100px] animate-pulse-soft"></div>
+<div class="absolute bottom-[-150px] right-[-150px] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[110px] animate-float-slow"></div>
+<div class="absolute top-[35%] left-[-100px] w-[350px] h-[350px] bg-fuchsia-500/10 rounded-full blur-[90px] animate-float-delayed"></div>
+</div>
+<main class="flex-grow w-full max-w-sm mx-auto flex flex-col justify-start items-center z-10 relative">
+<div class="w-full flex flex-col justify-between min-h-[80vh] py-6 transition-all duration-500" id="locked-state">
+<div class="w-full flex items-center justify-between py-2">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
+<span class="text-[10px] tracking-[0.2em] uppercase font-bold text-white/40">Verrouillé</span>
+</div>
+<div class="p-1.5 rounded-full bg-white/5 border border-white/10">
+<i class="w-3.5 h-3.5 text-white/60" data-lucide="lock"></i>
+</div>
+</div>
+<div class="w-full p-8 my-auto rounded-[32px] bg-gradient-to-b from-white/5 to-white/0 border border-white/10 backdrop-blur-2xl flex flex-col items-center text-center shadow-2xl relative overflow-hidden" id="login-card">
+<div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-purple-500/30 to-transparent"></div>
+<div class="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center border border-purple-500/30 mb-5 shadow-lg shadow-purple-500/5">
+<i class="w-7 h-7 text-purple-300" data-lucide="fingerprint"></i>
+</div>
+<h2 class="text-xl font-semibold tracking-tight text-white mb-2">Pour Li-Na ❤️</h2>
+<p class="text-xs text-white/50 mb-7 leading-relaxed px-2">Mais quel est donc le code ?</p>
+<div class="w-full space-y-3">
+<div class="relative">
+<form onsubmit="event.preventDefault(); checkPassword();">
+  <input 
+    id="password-input" 
+    type="password" 
+    enterkeyhint="go" 
+    placeholder="Code secret..." 
+    class="w-full glass-input px-4 py-3.5 rounded-2xl text-center text-base text-white placeholder-white/20 tracking-[0.25em] focus:outline-none"
+  />
+  <p id="loading-text" class="text-xs text-white/60 mt-2 text-center hidden">Chargement...</p>
+</form>
+</div>
+<button class="w-full py-3.5 px-4 rounded-2xl text-xs font-semibold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 active:scale-[0.98] transition-all duration-300 shadow-[0_4px_25px_rgba(168,85,247,0.25)] flex items-center justify-center gap-2" onclick="checkPassword()">
+<span>Déverrouiller</span>
+<i class="w-4 h-4" data-lucide="chevron-right"></i>
+</button>
+</div>
+</div>
+<div class="h-6"></div>
+</div>
+<div class="hidden w-full flex-col justify-start opacity-0 scale-95 transition-all duration-500 pt-10" id="menu-state">
+<div class="w-full flex items-center justify-between mb-8">
+<h2 class="text-2xl font-bold bg-gradient-to-r from-white to-purple-300 bg-clip-text text-transparent">Bienvenue mon bébé !!</h2>
+</div>
+<div class="space-y-4 w-full">
+
+  <div id="daily-note-admin-card" class="daily-note-card daily-note-admin-card w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group transition-all duration-300" aria-live="polite">
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center justify-between gap-3 mb-2">
+        <h3 class="text-lg font-semibold text-white group-hover:text-amber-300 transition-colors">Mot de Jules</h3>
+        <span id="daily-note-admin-time" class="daily-note-time text-[10px] tracking-wider uppercase text-white/35 whitespace-nowrap">—</span>
+      </div>
+      <p id="daily-note-admin-text" class="text-xs text-white/50">Chargement du mot...</p>
+    </div>
+    <div class="daily-note-icon flex-shrink-0 p-4 bg-amber-500/15 rounded-full transition-colors">
+      <i data-lucide="message-circle-heart" class="text-amber-300 w-6 h-6"></i>
+    </div>
+  </div>
+
+  <div id="daily-note-user-card" class="daily-note-card daily-note-user-card w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group transition-all duration-300" aria-live="polite">
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center justify-between gap-3 mb-2">
+        <h3 class="text-lg font-semibold text-white group-hover:text-pink-300 transition-colors">Mot de Li-Na</h3>
+        <span id="daily-note-user-time" class="daily-note-time text-[10px] tracking-wider uppercase text-white/35 whitespace-nowrap">—</span>
+      </div>
+      <p id="daily-note-user-text" class="text-xs text-white/50">Chargement du mot...</p>
+
+      <div id="user-daily-note-actions" class="hidden">
+        <button id="btn-toggle-user-daily-note" type="button" class="user-daily-note-toggle" onclick="toggleUserDailyNoteEditor()">
+          <i data-lucide="pencil-line" class="w-3.5 h-3.5"></i>
+          <span>Écrire mon mot</span>
+        </button>
+
+        <div id="user-daily-note-editor" class="hidden">
+          <textarea id="user-daily-note" class="admin-input admin-textarea user-daily-note-textarea" maxlength="1200" placeholder="Écris ton mot du jour..."></textarea>
+
+          <label class="user-daily-note-push-option">
+            <input id="user-daily-note-send-push" type="checkbox" />
+            <span class="user-daily-note-checkbox" aria-hidden="true">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            </span>
+            <span>M'envoyer une notification (à Jules)</span>
+          </label>
+
+          <button id="btn-save-user-daily-note" type="button" class="admin-primary-btn user-daily-note-save" onclick="saveUserDailyNote()">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            <span>Publier mon mot</span>
+          </button>
+          <p id="user-daily-note-status" class="admin-status hidden"></p>
+        </div>
+      </div>
+    </div>
+    <div class="daily-note-icon flex-shrink-0 p-4 bg-pink-500/15 rounded-full transition-colors">
+      <i data-lucide="message-circle-heart" class="text-pink-300 w-6 h-6"></i>
+    </div>
+  </div>
+
+  <div id="on-this-day-container" class="hidden w-full" aria-live="polite"></div>
+
+  <button onclick="navigate('tracker')" class="w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group hover:bg-white/10 transition-all duration-300 active:scale-[0.98] tracker-menu-card">
+    <div class="flex-1">
+      <h3 class="text-lg font-semibold text-white mb-1 group-hover:text-rose-300 transition-colors">Notre Tracker</h3>
+      <p class="text-xs text-white/50">Pleins de stats sur nous (on est en SES ou quoi)</p>
+    </div>
+    <div class="flex-shrink-0 p-4 bg-rose-500/15 rounded-full group-hover:bg-rose-500/30 transition-colors">
+      <i data-lucide="timer-reset" class="text-rose-300 w-6 h-6"></i>
+    </div>
+  </button>
+
+  <button onclick="navigate('map')" class="w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group hover:bg-white/10 transition-all duration-300 active:scale-[0.98] map-menu-card">
+    <div class="flex-1 min-w-0">
+      <h3 class="text-lg font-semibold text-white mb-1 group-hover:text-purple-300 transition-colors">Notre Carte</h3>
+      <p class="text-xs text-white/50">Tous les évènements qui nous ont marqué sur une carte hihihi</p>
+    </div>
+    <div class="flex-shrink-0 p-4 bg-purple-500/20 rounded-full group-hover:bg-purple-500/40 transition-colors">
+      <i data-lucide="map" class="text-purple-300 w-6 h-6"></i>
+    </div>
+  </button>
+
+  <button onclick="navigate('letter')" class="w-full text-left glass-panel rounded-[28px] p-6 flex items-center justify-between gap-8 group hover:bg-white/10 transition-all duration-300 active:scale-[0.98]">
+    <div class="flex-1">
+      <h3 class="text-lg font-semibold text-white mb-1 group-hover:text-fuchsia-300 transition-colors">La Lettre</h3>
+      <p class="text-xs text-white/50">Tout ce que je ressens pour toi ❤️</p>
+    </div>
+    <div class="flex-shrink-0 p-4 bg-fuchsia-500/20 rounded-full group-hover:bg-fuchsia-500/40 transition-colors">
+      <i data-lucide="heart" class="text-fuchsia-300 w-6 h-6"></i>
+    </div>
+  </button>
+</div>
+
+<div class="user-footer-actions">
+<button class="admin-link-btn" onclick="lockSite()">Verrouiller le site</button>
+</div>
+
+</div>
+
+<div class="hidden w-full flex-col justify-start opacity-0 scale-95 transition-all duration-500 pt-6" id="tracker-state">
+  <div class="w-full flex items-center justify-between py-4 mb-5">
+    <button class="flex items-center gap-2 text-white/60 hover:text-white transition-colors" onclick="navigate('menu')">
+      <i class="w-4 h-4" data-lucide="arrow-left"></i>
+      <span class="text-xs font-semibold uppercase tracking-wider">Retour</span>
+    </button>
+    <span class="text-[10px] tracking-[0.2em] uppercase font-bold text-rose-300">Notre Tracker</span>
+  </div>
+
+  <div class="tracker-paper-card" aria-live="polite">
+    <div class="tracker-tape"></div>
+    <div class="tracker-icon-wrap">
+      <i data-lucide="timer-reset" class="w-6 h-6"></i>
+    </div>
+
+    <p class="tracker-eyebrow">Depuis combien de temps ?</p>
+    <div id="calendar-tracker-value" class="tracker-value">Chargement…</div>
+    <p id="calendar-tracker-detail" class="tracker-detail">Lecture du calendrier en cours.</p>
+
+    <div class="tracker-latest-card">
+      <p class="tracker-latest-label">La dernière fois qu'on s'est vu…</p>
+
+      <div
+        id="calendar-tracker-secret"
+        class="tracker-secret"
+        role="button"
+        tabindex="0"
+        aria-label="Révéler ce qu'on a fait la dernière fois"
+      >
+        <span id="calendar-tracker-latest-type" class="tracker-latest-type tracker-secret-text">—</span>
+        <canvas id="tracker-invisible-ink" class="tracker-invisible-ink" aria-hidden="true"></canvas>
+      </div>
+    </div>
+
+    <button id="calendar-tracker-more" type="button" class="tracker-more-btn" onclick="toggleTrackerDetails()" aria-expanded="false" aria-controls="calendar-tracker-more-panel">
+      <span id="calendar-tracker-more-label">Voir plus</span>
+      <i id="calendar-tracker-more-icon" data-lucide="chevron-down" class="w-4 h-4"></i>
+    </button>
+
+    <div id="calendar-tracker-more-panel" class="tracker-more-panel hidden">
+      <p class="tracker-more-title">Historique par type</p>
+      <div id="calendar-tracker-type-stats" class="tracker-type-stats"></div>
+    </div>
+
+    <button id="calendar-tracker-refresh" type="button" class="tracker-refresh-btn" onclick="loadCalendarTracker(true)">
+      <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+      <span>Actualiser</span>
+    </button>
+  </div>
+
+  <div class="tracker-paper-card tracker-stats-card" aria-live="polite">
+    <div class="tracker-tape tracker-tape-alt"></div>
+    <div class="tracker-icon-wrap tracker-stats-icon-wrap">
+      <i data-lucide="chart-no-axes-column-increasing" class="w-6 h-6"></i>
+    </div>
+
+    <p class="tracker-eyebrow">Nos souvenirs</p>
+
+    <div class="tracker-map-stats-grid" aria-label="Statistiques de notre carte">
+      <div class="tracker-map-stat">
+        <span id="tracker-stat-places" class="tracker-map-stat-value">—</span>
+        <span id="tracker-stat-places-label" class="tracker-map-stat-label">lieux visités</span>
+      </div>
+      <div class="tracker-map-stat">
+        <span id="tracker-stat-events" class="tracker-map-stat-value">—</span>
+        <span id="tracker-stat-events-label" class="tracker-map-stat-label">souvenirs</span>
+      </div>
+    </div>
+
+    <div class="tracker-top-place-card">
+      <span class="tracker-top-place-label">Le lieu où on a le plus de souvenirs</span>
+      <strong id="tracker-top-place-name" class="tracker-top-place-name">Chargement…</strong>
+      <span id="tracker-top-place-count" class="tracker-top-place-count">—</span>
+    </div>
+
+    <button id="tracker-places-more" type="button" class="tracker-more-btn" onclick="toggleTrackerPlacesDetails()" aria-expanded="false" aria-controls="tracker-places-ranking-panel">
+      <span id="tracker-places-more-label">Voir plus</span>
+      <i id="tracker-places-more-icon" data-lucide="chevron-down" class="w-4 h-4"></i>
+    </button>
+
+    <div id="tracker-places-ranking-panel" class="tracker-more-panel hidden">
+      <p class="tracker-more-title">Classement des lieux</p>
+      <div id="tracker-places-ranking" class="tracker-places-ranking"></div>
+    </div>
+  </div>
+    <div class="tracker-paper-card tracker-stats-card" aria-live="polite">
+    <div class="tracker-tape"></div>
+    <div class="tracker-icon-wrap">
+      <i data-lucide="map-pin" class="w-6 h-6"></i>
+    </div>
+
+    <p class="tracker-eyebrow">Distance entre nous</p>
+    <div id="tracker-distance-value" class="tracker-value">— km</div>
+    <p id="tracker-distance-sub" class="tracker-detail">Appuie sur Actualiser pour savoir à combien de distance on est.</p>
+
+    <div class="tracker-map-stats-grid" aria-label="Positions actuelles">
+      <div class="tracker-map-stat">
+        <span id="tracker-jules-city" class="tracker-map-stat-value text-base">—</span>
+        <span id="tracker-jules-time" class="tracker-map-stat-label">Position de Jules</span>
+      </div>
+      <div class="tracker-map-stat">
+        <span id="tracker-lina-status" class="tracker-map-stat-value text-base">En attente</span>
+        <span class="tracker-map-stat-label">Ta position</span>
+      </div>
+    </div>
+
+    <p id="location-request-status" class="tracker-detail hidden mt-2 text-rose-300"></p>
+
+    <button id="btn-refresh-jules-loc" type="button" class="tracker-refresh-btn" onclick="requestJulesLocationUpdate()">
+      <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+      <span>Actualiser sa position</span>
+    </button>
+  </div>
+    <div class="tracker-paper-card tracker-stats-card tracker-timeline-card" aria-live="polite">
+    <div class="tracker-tape tracker-tape-alt"></div>
+    <div class="tracker-icon-wrap tracker-timeline-icon-wrap">
+      <i data-lucide="calendar-heart" class="w-6 h-6"></i>
+    </div>
+
+    <p class="tracker-eyebrow">Frise chronologique</p>
+    <p id="tracker-timeline-subtitle" class="tracker-detail">Chargement...</p>
+
+    <div class="tracker-timeline-toolbar">
+      <button id="tracker-timeline-filter-btn" type="button" class="tracker-timeline-filter-btn" onclick="toggleTimelineFilterMode()">
+        <span id="tracker-timeline-filter-label">Voir tous les souvenirs</span>
+      </button>
+      <button id="tracker-timeline-sort-btn" type="button" class="tracker-timeline-sort-btn" onclick="toggleTimelineSortOrder()">
+        <i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i>
+        <span id="tracker-timeline-sort-label">Du début à aujourd'hui</span>
+      </button>
+    </div>
+
+    <div id="tracker-timeline-list" class="tracker-timeline-list"></div>
+
+    <button id="tracker-timeline-more" type="button" class="tracker-more-btn hidden" onclick="toggleTimelineExpanded()" aria-expanded="false" aria-controls="tracker-timeline-list">
+      <span id="tracker-timeline-more-label">Voir toute la frise</span>
+      <i id="tracker-timeline-more-icon" data-lucide="chevron-down" class="w-4 h-4"></i>
+    </button>
+  </div>
+</div>
+
+<div class="hidden w-full flex-col justify-start opacity-0 scale-95 transition-all duration-500 h-[85vh]" id="map-state">
+<div class="w-full flex items-center justify-between py-4 mb-2">
+<button class="flex items-center gap-2 text-white/60 hover:text-white transition-colors" onclick="navigate('menu')">
+<i class="w-4 h-4" data-lucide="arrow-left"></i>
+<span class="text-xs font-semibold uppercase tracking-wider">Retour</span>
+</button>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-1.5 bg-white/5 hover:bg-white/15 px-2.5 py-1.5 rounded-full transition-colors text-white/70 border border-white/10 backdrop-blur-md" onclick="toggleMapStyle()">
+<i class="w-3.5 h-3.5" data-lucide="layers"></i>
+<span class="text-[9px] font-semibold uppercase tracking-wider" id="map-style-text">Satellite</span>
+</button>
+<span class="text-[10px] tracking-[0.2em] uppercase font-bold text-purple-400">Notre Carte</span>
+</div>
+</div>
+<div class="w-full flex-grow rounded-[32px] overflow-hidden border border-purple-500/20 relative shadow-[0_0_40px_rgba(168,85,247,0.15)] bg-[#030107]">
+<div class="w-full h-full z-0" id="leaflet-map"></div>
+</div>
+</div>
+<div aria-modal="true" class="hidden opacity-0" id="place-detail-state" onclick="handlePlaceDetailBackdrop(event)" role="dialog">
+<div class="liquid-glass-glow w-full rounded-[36px] p-7 flex flex-col text-left" onclick="event.stopPropagation()">
+<div class="flex justify-between items-center text-[10px] tracking-widest text-white/40 mb-4 uppercase font-medium">
+<span id="detail-date">Date du souvenir</span>
+</div>
+<h3 class="text-2xl font-semibold bg-gradient-to-r from-white via-white to-purple-200 bg-clip-text text-transparent mb-6 leading-tight" id="detail-title">
+          Titre du lieu
+        </h3>
+<div class="space-y-4 text-[13px] leading-relaxed text-purple-100/85" id="detail-content">
+</div>
+</div>
+</div>
+<div class="hidden w-full flex-col justify-start opacity-0 scale-95 transition-all duration-500" id="letter-state">
+<div class="w-full flex items-center justify-between py-4 mb-2">
+<button class="flex items-center gap-2 text-white/60 hover:text-white transition-colors" onclick="navigate('menu')">
+<i class="w-4 h-4" data-lucide="arrow-left"></i>
+<span class="text-xs font-semibold uppercase tracking-wider">Retour</span>
+</button>
+</div>
+<div class="liquid-glass-glow w-full rounded-t-[36px] p-7 pt-9 flex flex-col text-left relative" id="letter-private-content">
+<p class="text-center text-sm text-white/50 py-12">Chargement de la lettre...</p>
+</div>
+</div>
+<!-- espace admin -->
+<div class="hidden w-full flex-col justify-start opacity-0 scale-95 transition-all duration-500 pt-10" id="admin-state">
+<div class="w-full flex items-center justify-between mb-8">
+<h2 class="text-2xl font-bold">Espace admin</h2>
+</div>
+<div class="glass-panel rounded-3xl p-6 mb-6 admin-panel">
+<p class="admin-panel-title">Mot de Jules</p>
+<textarea class="admin-input admin-textarea" id="admin-daily-note" maxlength="1200" placeholder="Écris ton mot du jour..."></textarea>
+<button class="admin-primary-btn" id="btn-save-daily-note" onclick="saveDailyNote()">
+<i class="w-4 h-4" data-lucide="save"></i>
+<span>Publier le mot</span>
+</button>
+<p class="admin-status hidden" id="daily-note-status"></p>
+</div>
+<div class="glass-panel rounded-3xl p-6 mb-6 admin-panel">
+<p class="admin-panel-title">Gestion des lieux & souvenirs</p>
+
+<label class="admin-field">
+<span>Lieu sélectionné</span>
+<select class="admin-input" id="admin-place-select" onchange="handleAdminPlaceSelection()">
+<option value="new">Ajouter un nouveau lieu</option>
+</select>
+</label>
+
+<div class="admin-grid-2">
+<label class="admin-field">
+<span>Latitude</span>
+<input class="admin-input" id="admin-place-lat" placeholder="43.946538" step="any" type="number"/>
+</label>
+<label class="admin-field">
+<span>Longitude</span>
+<input class="admin-input" id="admin-place-lng" placeholder="4.800285" step="any" type="number"/>
+</label>
+</div>
+
+<label class="admin-field">
+<span>Titre du lieu</span>
+<input class="admin-input" id="admin-place-title" placeholder="Ex. Notre restaurant" type="text"/>
+</label>
+
+<p class="admin-tip hidden" id="admin-place-lock-info"></p>
+
+<div class="admin-events-head">
+<span>Événement(s)</span>
+<button class="admin-secondary-btn" id="btn-add-event" onclick="addAdminEvent()" type="button">
+<i class="w-4 h-4" data-lucide="plus"></i>
+Ajouter un événement
+</button>
+</div>
+<div class="admin-events-list" id="admin-events-list"></div>
+
+<div class="admin-place-actions">
+<button class="admin-primary-btn" id="btn-save-place" onclick="savePlaceData()" type="button">
+<i class="w-4 h-4" data-lucide="save"></i>
+<span>Enregistrer les modifications</span>
+</button>
+<button class="admin-danger-btn hidden" id="btn-delete-place" onclick="deleteSelectedPlace()" type="button">
+<i class="w-4 h-4" data-lucide="trash-2"></i>
+<span>Supprimer le lieu</span>
+</button>
+</div>
+<p class="admin-status hidden" id="place-status"></p>
+</div>
+
+<div class="glass-panel rounded-3xl p-6 mb-6 admin-panel">
+  <p class="admin-panel-title">Tracker calendrier iCloud</p>
+
+  <label class="admin-field">
+    <span>Lien public du calendrier</span>
+    <input class="admin-input" id="admin-calendar-public-url" type="url" autocomplete="off" placeholder="Lien" />
+  </label>
+
+  <div class="tracker-admin-meanings">
+    <label class="admin-field">
+      <span>type-1</span>
+      <textarea class="admin-input admin-textarea tracker-admin-meaning" id="admin-tracker-meaning-type-1" maxlength="600" placeholder="Texte"></textarea>
+    </label>
+    <label class="admin-field">
+      <span>type-2</span>
+      <textarea class="admin-input admin-textarea tracker-admin-meaning" id="admin-tracker-meaning-type-2" maxlength="600" placeholder="Texte"></textarea>
+    </label>
+    <label class="admin-field">
+      <span>type-3</span>
+      <textarea class="admin-input admin-textarea tracker-admin-meaning" id="admin-tracker-meaning-type-3" maxlength="600" placeholder="Texte"></textarea>
+    </label>
+    <label class="admin-field">
+      <span>type-4</span>
+      <textarea class="admin-input admin-textarea tracker-admin-meaning" id="admin-tracker-meaning-type-4" maxlength="600" placeholder="Texte"></textarea>
+    </label>
+  </div>
+
+  <div class="admin-place-actions">
+    <button class="admin-primary-btn" id="btn-save-calendar-tracker" onclick="saveCalendarTrackerConfig()" type="button">
+      <i class="w-4 h-4" data-lucide="save"></i>
+      <span>Enregistrer</span>
+    </button>
+    <button class="admin-secondary-btn" id="btn-load-calendar-tracker" onclick="loadCalendarTrackerAdminConfig()" type="button">
+      <i class="w-4 h-4" data-lucide="download"></i>
+      <span>Charger</span>
+    </button>
+  </div>
+  <p class="admin-status hidden" id="calendar-tracker-admin-status"></p>
+</div>
+
+<div class="glass-panel rounded-3xl p-6 mb-6 admin-panel">
+  <p class="admin-panel-title">Notification Li-Na par mail</p>
+  <p class=".admin-tip">Envoyer un mail pour prévenir qu'une mise à jour vient d'être publiée. <br></br></p>
+  <button class="admin-primary-btn" id="btn-send-email" onclick="sendUpdateEmail()">
+    <i class="w-4 h-4" data-lucide="send"></i>
+    <span>Envoyer l'Email</span>
+  </button>
+  <p class="admin-status hidden" id="email-status">Envoi en cours...</p>
+</div>
+
+<div class="glass-panel rounded-3xl p-6 mb-6 admin-panel">
+  <p class="admin-panel-title">Notification Push</p>
+  <label class="admin-field">
+    <span>Titre</span>
+    <input class="admin-input" id="admin-push-title" type="text" maxlength="100" placeholder="Titre de notification" />
+  </label>
+  <label class="admin-field">
+    <span>Message</span>
+    <textarea class="admin-input admin-textarea" id="admin-push-message" maxlength="500" placeholder="Texte de notification"></textarea>
+  </label>
+  <button class="admin-primary-btn" id="btn-send-push" onclick="sendPushNotification()">
+    <i class="w-4 h-4" data-lucide="bell-ring"></i>
+    <span>Envoyer le Push</span>
+  </button>
+  <p class="admin-status hidden" id="push-status"></p>
+</div>
+
+<div class="admin-footer-actions">
+<button class="admin-link-btn" onclick="navigate('menu')">Voir le site</button>
+<button class="admin-link-btn" onclick="lockSite()">Verrouiller le site</button>
+</div>
+</div>
+</main>
+<div class="bottom-infinite-fade"></div>
+<div class="fixed inset-0 bg-[#030107]/90 z-50 flex items-center justify-center p-4 opacity-0 invisible transition-all duration-300" id="lightbox" onclick="closeLightbox()">
+<div class="relative max-w-full max-h-full flex items-center justify-center">
+<img alt="Agrandissement" class="max-w-[95vw] max-h-[85vh] rounded-2xl border border-purple-500/20 shadow-2xl object-contain" id="lightbox-img" src=""/>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/heic-to@1.5.2/dist/iife/heic-to.js"></script>
+<script crossorigin="" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-functions-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-storage-compat.js"></script>
+<script src="firebase-config.js?v=20261003-2"></script>
+<script src="script.js?v=20261117-3"></script>
+</body>
+</html>
