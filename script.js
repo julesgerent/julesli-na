@@ -2739,7 +2739,7 @@ function renderTimeline() {
       if (moreLabel) {
         moreLabel.textContent = timelineExpanded
           ? "Réduire la frise"
-          : `Voir la suite (${filteredEntries.length})`;
+          : `Voir la suite (${(filteredEntries.length)-5})`;
       }
       if (moreIcon) {
         moreIcon.setAttribute("data-lucide", timelineExpanded ? "chevron-up" : "chevron-down");
